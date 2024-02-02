@@ -17,6 +17,8 @@ def _spectral_distribution_n1(d_lambda: np.ndarray) -> np.ndarray:
 
 
 def theta(x: np.ndarray) -> np.ndarray:
+    if x > 0.5:
+        raise Exception("Too big!")
     return np.where(x > 0, 1, 0)
 
 
@@ -31,19 +33,19 @@ def _spectral_distribution(d_lambda: np.ndarray, fprev: np.ndarray) -> np.ndarra
     """
 
     def _integrand(xi, dl: float):
-        a = dl - xi - 1
-        f = np.interp(xi, d_lambda, fprev)
+        a = dl - xi - 1,
+        f = np.interp([xi, xi], fprev, d_lambda)
         return f * theta(1 - np.abs(a)) * (3 / 8) * (1 + a**2)
 
     e_min = np.min(d_lambda)
     e_max = np.max(d_lambda)
 
-    res = [integrate(_integrand, e_min, e_max, args=(l,))[0] for l in d_lambda]
+    res = [integrate(_integrand, e_min, e_max, args=(l,))[1] for l in d_lambda]
 
     return np.array(res)
 
 
-def spectral_distribution(d_lambda: np.ndarray, n=1) -> list[np.ndarray]:
+def spectral_distribution(d_lambda: np.ndarray, n=1, fs=[]) -> list[np.ndarray]:
     """
     Calculate the spectral distribution of `n` Compton scatterings using the
     modified Fokker-Planck equation of Ross (1978) in the Thompson limit.
@@ -53,7 +55,7 @@ def spectral_distribution(d_lambda: np.ndarray, n=1) -> list[np.ndarray]:
     Returns a list with the `n` spectral functions, each an `np.ndarray`.
     """
 
-    fs = [_spectral_distribution_n1(d_lambda)]
+    fs.append(_spectral_distribution_n1(d_lambda))
 
     for _ in range(n - 1):
         fnext = _spectral_distribution(d_lambda, fs[-1])
@@ -66,7 +68,7 @@ def spectral_distribution(d_lambda: np.ndarray, n=1) -> list[np.ndarray]:
 d_lambda = np.linspace(0, 7, 100)
 
 # calculate n compton scatterings
-fs = spectral_distribution(d_lambda, 4)
+fs = spectral_distribution(dlambda, 4)
 
 # clear anything on the current figure
 plt.clf()
@@ -75,4 +77,5 @@ plt.clf()
 for f in fs:
     plt.plot(d_lambda, f)
 
+plt.clf()
 plt.show()
